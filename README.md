@@ -147,6 +147,8 @@ A higher version number means the document was republished. That is all it means
 
 **Bolagsverket** — the free bulk files at `vardefulla-datamangder.bolagsverket.se` carry grunddata including deregistration reason. The full company API, with styrelse and verklig huvudman, is 5,000 SEK to connect plus a monthly fee and a written agreement.
 
+**Lantmäteriet NGP** — digital detaljplaner via API, CC BY 4.0, free. Coverage moved quickly during 2026, so check it yourself before planning around it: a Länsstyrelsen briefing dated 2026-04-16 reports 252 municipalities connected with 16,069 plans, while Lantmäteriet's own pages state no figure at all. One gap is structural rather than a matter of coverage — plans begun before 2022-01-01 need not be published digitally, so the historical layer stays permanently incomplete.
+
 Known dead ends, so nobody spends a day rediscovering them:
 
 - **Post- och Inrikes Tidningar** — konkurs, kallelse på okända borgenärer, skuldsanering. Sweden's official legal-notice organ, behind bot protection, no API and no bulk file. Only commercial scrapers.
