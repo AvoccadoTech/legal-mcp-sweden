@@ -103,10 +103,11 @@ async def sync(mode: SyncMode = SyncMode.DELTA, max_pages: int | None = None) ->
         "Narrow with court code, rättsområde, statutory reference or decision "
         "date.\n\n"
         "Note what this covers: superior-court decisions and referat published "
-        "by Domstolsverket. Most tingsrätt and hovrätt decisions are never "
-        "published and are not here, and there is no legislation, no förarbeten "
-        "and no commentary. An empty result means nothing matched in the "
-        "mirror, not that Swedish law is silent."
+        "by Domstolsverket — roughly 17,000 records. Most tingsrätt and "
+        "förvaltningsrätt decisions are not published here, though commercial "
+        "databases hold many of them, and there is no legislation, no "
+        "förarbeten and no commentary. An empty result means nothing matched in "
+        "the mirror, not that Swedish law is silent."
     ),
 )
 async def search(

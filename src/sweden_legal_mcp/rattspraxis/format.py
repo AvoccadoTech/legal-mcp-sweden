@@ -3,11 +3,15 @@
 One rule governs this file: never let the mirror look bigger than it is.
 
 It holds roughly 17,000 published decisions. JUNO holds over two million, plus
-the commentaries. Presented as a research database this loses the moment a
-lawyer searches for a hovrätt case and finds nothing; presented as a monitor
-over what the firm has asked to watch, it does something no subscription does.
-Every empty result therefore says what was *not* searched, not just that
-nothing matched.
+the commentaries, and already offers saved-search monitoring over all of it.
+Presented as a research database this loses the moment a lawyer searches for a
+hovrätt case and finds nothing.
+
+What this does that a subscription does not is narrower and worth being precise
+about: the watch carries the firm's own matter reference, the results are tool
+output an agent can act on rather than an email to a person, and the corpus sits
+where the firm's own documents sit so the two can be joined. Every empty result
+therefore says what was *not* searched, not just that nothing matched.
 """
 
 from __future__ import annotations
@@ -18,9 +22,11 @@ from .models import SIGNIFICANCE_LABEL, Decision
 
 SCOPE_NOTE = (
     "This is Domstolsverket's published case law only — superior-court decisions and "
-    "referat. It is not a complete record of Swedish case law: most tingsrätt and "
-    "hovrätt decisions are never published, and this holds no legislation, no "
-    "förarbeten and no commentary. It complements a legal database; it does not replace one."
+    "referat. It is not a complete record of Swedish case law: Domstolsverket does not "
+    "publish most tingsrätt and förvaltningsrätt decisions, though commercial databases "
+    "obtain many of them — JUNO reports over two million judgments against the ~17,000 "
+    "here. This holds no legislation, no förarbeten and no commentary. It complements a "
+    "legal database; it does not replace one."
 )
 
 

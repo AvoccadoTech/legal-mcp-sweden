@@ -13,7 +13,9 @@ Both run on your machine and keep their state in files you own — no account, n
 
 That is deliberate. Which legal positions a firm watches, and which decisions it has asked to be told about, is a map of the firm's matters. It is not ours to hold.
 
-**Neither replaces a legal database.** JUNO holds over two million decisions plus the commentaries; the case-law mirror here holds around seventeen thousand and no commentary at all. These monitor; a subscription researches. Keep both.
+**Neither replaces a legal database.** JUNO holds over two million judgments plus the commentaries, and already offers saved-search and paragraph-level monitoring across all of it. The case-law mirror here holds around seventeen thousand records and no commentary.
+
+What these do that a subscription does not is narrower: a watch carries your own matter reference, the result is tool output an agent can act on rather than an email to a person, and the data sits where your documents sit — so a decision can be joined to the position your firm has already taken. Keep the subscription.
 
 ---
 # Install
