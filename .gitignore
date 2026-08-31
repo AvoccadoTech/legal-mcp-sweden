@@ -8,8 +8,14 @@ dist/
 .pytest_cache/
 .ruff_cache/
 
-# Watcher state. The ledger records which legal positions a firm tracks and
-# which knowledge-base files depend on them — that list is a map of the firm's
-# matters. It belongs on the firm's disk and nowhere else.
+# Watcher state. The Lifos ledger records which legal positions a firm tracks
+# and which knowledge-base files depend on them; the rättspraxis database holds
+# the watchlist — which decisions the firm has asked to be told about, tied to
+# its own matter references. Both are a map of the firm's matters. They belong
+# on the firm's disk and nowhere else.
 .lifos/
 *-state.json
+.rattspraxis/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
