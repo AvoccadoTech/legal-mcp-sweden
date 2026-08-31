@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [{ name = "Avoccado Tech" }]
-keywords = ["mcp", "sweden", "legal", "lifos", "migrationsverket", "open-data"]
+keywords = ["mcp", "sweden", "legal", "lifos", "migrationsverket", "domstolsverket", "case-law", "open-data"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Legal Industry",
@@ -29,6 +29,7 @@ Issues = "https://github.com/AvoccadoTech/legal-mcp-sweden/issues"
 
 [project.scripts]
 sweden-lifos-mcp = "sweden_legal_mcp.lifos.server:main"
+sweden-rattspraxis-mcp = "sweden_legal_mcp.rattspraxis.server:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -39,4 +40,4 @@ packages = ["src/sweden_legal_mcp"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-markers = ["live: hits the real Lifos feed"]
+markers = ["live: hits a real government API"]

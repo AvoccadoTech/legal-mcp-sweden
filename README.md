@@ -2,14 +2,41 @@
 
 [MCP](https://modelcontextprotocol.io) servers over Swedish public legal data.
 
-One server so far: **Lifos**, a currency watcher over Migrationsverket's *rättsliga ställningstaganden*. It answers one question — **has a legal position our knowledge base depends on been superseded?**
+Two servers, each answering one question rather than being a database:
 
-It runs on your machine, reads a public RSS feed, and keeps its notes in a JSON file you own. There is no account, no API key, and no service in the middle.
+| Server | Question | Source |
+|---|---|---|
+| **`lifos`** | Has a legal position our knowledge base depends on been superseded? | Migrationsverket's rättsliga ställningstaganden |
+| **`rattspraxis`** | Has anything been decided that touches what we are already working on? | Domstolsverket's published case law |
 
-That is deliberate. Which legal positions a firm watches — and which of its own files depend on them — is a map of the firm's matters, and it is not ours to hold.
+Both run on your machine and keep their state in files you own — no account, no API key, no service in the middle.
+
+That is deliberate. Which legal positions a firm watches, and which decisions it has asked to be told about, is a map of the firm's matters. It is not ours to hold.
+
+**Neither replaces a legal database.** JUNO holds over two million decisions plus the commentaries; the case-law mirror here holds around seventeen thousand and no commentary at all. These monitor; a subscription researches. Keep both.
+
+---
+# Install
+
+```bash
+git clone https://github.com/AvoccadoTech/legal-mcp-sweden.git
+cd legal-mcp-sweden
+pip install -e .
+```
+
+Requires Python 3.11 or newer.
+
+```bash
+pip install -e ".[dev]"
+python -m pytest tests -q -m "not live"   # offline
+python -m pytest tests -q                 # includes live calls to both APIs
+```
+
+The live tests need no credentials — both sources are open — so they run by default and are marked rather than skipped. Two of them are early warning rather than verification: `test_live_legal_feed_carries_versioned_identifiers` fails when Lifos moves its portlet URL, and `test_live_ordering_is_newest_first` fails if Domstolsverket ever stops serving newest-first, which is the assumption the daily delta sync rests on.
 
 ---
 
+# Lifos — legal-position currency
 ## The idea
 
 Lifos item titles carry the document's identifier **and its version number**:
@@ -32,7 +59,6 @@ lifos_get_document(url)    → read what actually changed
 A lawyer decides whether the change matters. The tool never does — it reports that the question has been reopened, not what the answer is.
 
 ---
-
 ## What Lifos is
 
 Migrationsverket's database of country-of-origin information and legal guidance. Two things are published there that matter to a firm doing migration work:
@@ -45,7 +71,6 @@ Neither is law. Both are what the decision-maker on the other side of the case i
 **There is no JSON API.** There is an RSS feed, and for a currency check it is better than an API would have been: the version number is the entire signal, and it arrives without having to diff any text.
 
 ---
-
 ## Before you build your own: the window
 
 **Lifos serves a five-item rolling window. There is no archive endpoint and no backfill.**
@@ -64,18 +89,7 @@ An unparseable version never reads as newer, either. A false *your knowledge bas
 Lifos runs on Sitevision. The landinformation feed has a clean alias at `/rss`; the rättsavdelningen feed — the one that matters — is reachable only through its portlet URL. If it starts returning 404, re-read the feed links on <https://lifos.migrationsverket.se/> and update `FEED_URLS` in `client.py`. The live test `test_live_legal_feed_carries_versioned_identifiers` fails loudly when this happens.
 
 ---
-
-## Install
-
-```bash
-git clone https://github.com/AvoccadoTech/legal-mcp-sweden.git
-cd legal-mcp-sweden
-pip install -e .
-```
-
-Requires Python 3.11 or newer.
-
-## Run
+## Run Lifos
 
 The server speaks MCP over stdio. Register it with any MCP-capable client:
 
@@ -102,8 +116,7 @@ The server speaks MCP over stdio. Register it with any MCP-capable client:
 **Point both at the firm's own storage.** Beside the knowledge base is the natural place, so the two travel together and neither depends on us.
 
 ---
-
-## Tools
+## Lifos tools
 
 | Tool | What it does |
 |---|---|
@@ -117,7 +130,6 @@ The server speaks MCP over stdio. Register it with any MCP-capable client:
 | `lifos_list_feeds` | The two feeds and what each carries |
 
 ---
-
 ## The ledger is a client list
 
 `lifos-state.json` records which ställningstaganden the firm watches and which of its files depend on them. Read the wrong way, that is a list of what the firm is working on.
@@ -127,23 +139,85 @@ This is why the server is stdio and not hosted, why `.gitignore` excludes the st
 The file is plain, indented JSON with Swedish characters left readable, because the people it describes should be able to open it.
 
 ---
+# Rättspraxis — case-law monitor
+## Why it mirrors instead of querying
 
-## Not a substitute for a lawyer
+The API is open and deliberately plain:
 
-This is a change sensor over a public feed. It does not read the new version, does not say what changed, and does not know whether any of it matters to a matter. A qualified lawyer decides that.
+```
+GET /api/v1/publiceringar?page=N     10 records, newest first
+GET /api/v1/domstolar                the court list
+```
 
-A higher version number means the document was republished. That is all it means.
+**`page` is the only parameter it honours.** Court codes, date ranges, subject filters and a JSON body on `/publiceringar/sok` are ignored or answered with 405 — verified 2026-08-30 by sending each one and comparing the result against an unfiltered call. So there is nothing to proxy: any question requires the whole corpus, which is why the server mirrors ~17,300 records into local SQLite and answers from there.
+
+The constraint turns out to be the feature. The corpus ends up on the firm's own disk, and so does the watchlist.
+## What the corpus actually contains
+
+Two datasets share one endpoint, and they are shaped oppositely. Measured 2026-08-30 over 600 recent records and 970 sampled across the whole corpus:
+
+| Field | Recent flow | Archive |
+|---|---|---|
+| `rattsomradeLista` | **78%** | 7% |
+| `lagrumLista` | 31% | **87%** |
+| `nyckelordLista` | 26% | **88%** |
+| PDF attached | **68%** | 4% |
+| `sammanfattning` | **100%** | **100%** |
+
+**Do not key a watch on statute.** Only ~47% of recent decisions carry a statutory reference anywhere, counting both the structured field and references recovered from the summary text. The misses are not random: courts reason topically, and decisions about buller, riktvärden, täktverksamhet or strandskydd routinely name no section at all. Free text over the summary is the only key that covers everything.
+
+By subject the live flow is narrow and worth knowing before pitching this anywhere: miljömål 27%, plan- och bygglagen 19%, fastighetsmål 9% — and brottmål 0.2%. It is a strong fit for environment, planning and property practices, and close to useless for criminal or family work.
+## Run the monitor
+
+```json
+{
+  "mcpServers": {
+    "sweden-rattspraxis": {
+      "command": "python",
+      "args": ["-m", "sweden_legal_mcp.rattspraxis"],
+      "env": { "RATTSPRAXIS_DB": "/path/to/firm/storage/.rattspraxis" }
+    }
+  }
+}
+```
+
+Then sync once — about 1,700 requests, a few minutes — and delta daily:
+
+```
+rattspraxis_sync(mode="full")     once
+rattspraxis_sync()                daily; stops at the first page holding nothing new
+```
+## Rättspraxis tools
+
+| Tool | What it does |
+|---|---|
+| `rattspraxis_sync` | Build or refresh the mirror |
+| `rattspraxis_add_watch` | Watch a query on behalf of a matter — the point of the server |
+| `rattspraxis_check_watchlist` | The daily alert; reports each decision once per watch |
+| `rattspraxis_list_watches` / `rattspraxis_remove_watch` | Manage watches |
+| `rattspraxis_search` | Search the mirror |
+| `rattspraxis_get` | One decision in full |
+| `rattspraxis_coverage` | What the mirror holds, and how complete it is |
+| `rattspraxis_courts` | Court codes for narrowing |
+## Two honesty rules in the code
+
+**Ranking never hides.** Hits are ordered so the most significant surfaces first, but relevance to the watch beats significance — a routine decision on the exact point a matter turns on outranks a `PREJUDIKAT` about something else. `PROVNINGSTILLSTAND` is called out rather than buried: leave to appeal means the question is heading upward, which for anyone with a project exposed to it is the most actionable thing in the feed.
+
+**An empty result says what was not searched.** A partial mirror cannot tell *nothing matched* from *not fetched yet*, so every empty answer points at `rattspraxis_coverage`, and coverage states the record count against the total Domstolsverket reports. Absence here is never absence in Swedish law.
 
 ---
+# Not a substitute for a lawyer
 
-## Roadmap
+Both servers are change sensors. Neither reads the new material, says what changed, or knows whether any of it matters to a matter. A qualified lawyer decides that.
 
-**Domstolsverket rättspraxis** — `rattspraxis.etjanst.domstol.se/api/v1/publiceringar`. Open, keyless, 17,329 records. Two things to know before starting, both measured on 2026-08-30:
+A higher version number means a document was republished. A watch hit means some words lined up. That is all either one means.
 
-- **`page` is the only parameter.** No search, no date filter, no court filter; `POST /publiceringar/sok` returns 405. A connector has to mirror the corpus and index locally — a sync job, not a proxy.
-- **The live flow is narrow.** Of the newest 600 records (Nov 2025 – Aug 2026): Mark- och miljööverdomstolen 55.5%, Högsta domstolen 20.7%, Högsta förvaltningsdomstolen 17%. By subject, miljömål 27%, plan- och bygglagen 19%, fastighetsmål 9% — and brottmål 0.2%. Sampled across the whole corpus back to 1981 it broadens considerably (HD 29.5%, Regeringsrätten 11.3%, Arbetsdomstolen 10.7%), but that archive is the same referat material the commercial databases already sell. The monitorable part is environment, planning and property.
+---
+# Roadmap
 
-**Riksdagen** — `data.riksdagen.se`, JSON, no key. SFS and förarbeten. Straightforward.
+Built already: `lifos` and `rattspraxis` above.
+
+**Riksdagen** — `data.riksdagen.se`, JSON, no key. SFS and förarbeten. Straightforward, and the natural third: it is the layer both existing servers point at without being able to read.
 
 **Bolagsverket** — the free bulk files at `vardefulla-datamangder.bolagsverket.se` carry grunddata including deregistration reason. The full company API, with styrelse and verklig huvudman, is 5,000 SEK to connect plus a monthly fee and a written agreement.
 
@@ -156,8 +230,7 @@ Known dead ends, so nobody spends a day rediscovering them:
 - **Jordbruksverket's centrala hästdatabas** — search interface only.
 
 Sister servers follow the same shape as [legal-mcp-croatia](https://github.com/AvoccadoTech/legal-mcp-croatia): one repository per jurisdiction, tools named for the register they query.
-
-## Licence
+# Licence
 
 [Apache-2.0](LICENSE). Built by [Avoccado Tech](https://avoccado.io).
 
